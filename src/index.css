@@ -1,0 +1,443 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Fraunces", "Georgia", ui-serif, serif;
+  --font-type: "Special Elite", ui-serif, Georgia, serif;
+
+  /* Stone / Sage / Charcoal / Terracotta / Teal palette */
+  --color-wandor-dark: #2C2F2E;
+  --color-wandor-text: #1E2120;
+  --color-wandor-muted: #6B7268;
+  --color-wandor-prompt: #B96843;
+
+  /* Stone surface scale (warm, organic) */
+  --color-ink-950: #F0EDE6;
+  --color-ink-900: #FAF8F3;
+  --color-ink-850: #F0EDE6;
+  --color-ink-800: #FAF8F3;
+  --color-ink-700: #D6DDD3;
+  --color-ink-600: #C2C9BC;
+
+  /* Sage accent scale */
+  --color-sage-50: #F4F6F2;
+  --color-sage-100: #E8ECE4;
+  --color-sage-200: #D1D9CA;
+  --color-sage-300: #B0BCA4;
+  --color-sage-400: #8FA07F;
+  --color-sage-500: #6E8460;
+  --color-sage-600: #566B4A;
+
+  /* Brand accent (terracotta) */
+  --color-pulse-100: #f2ddd2;
+  --color-pulse-200: #e4bfac;
+  --color-pulse-300: #d09a7d;
+  --color-pulse-400: #c48462;
+  --color-pulse-500: #B96843;
+  --color-pulse-600: #a05a3a;
+
+  /* Secondary accent (brass) */
+  --color-brass: #C9A66B;
+
+  /* Live data — deep muted teal */
+  --color-live: #23877D;
+
+  /* Card / surface */
+  --color-card: #FAF8F3;
+  --color-card-border: #D6DDD3;
+
+  /* Section spacing rhythm */
+  --spacing-section: 6rem;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink-950 text-wandor-text font-sans antialiased;
+  background-image: radial-gradient(1000px 480px at 85% -10%, rgba(185, 104, 67, 0.05), transparent 60%),
+    radial-gradient(800px 460px at -10% 15%, rgba(35, 135, 125, 0.03), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Tailwind v4 preflight uses cursor:default on buttons — reset to pointer for real widgets */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
+/* UI/UX accessibility: honor reduced-motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background: rgba(185, 104, 67, 0.2);
+  color: #171918;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF8F3;
+}
+::-webkit-scrollbar-thumb {
+  background: #C2C9BC;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A8B09E;
+}
+
+/* ---------- Glassmorphism (light) ---------- */
+.glass {
+  background: rgba(250, 248, 243, 0.72);
+  border: 1px solid rgba(214, 221, 211, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 1px 3px rgba(23, 25, 24, 0.03);
+}
+.glass-strong {
+  background: rgba(250, 248, 243, 0.92);
+  border: 1px solid rgba(214, 221, 211, 0.7);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 1px 3px rgba(23, 25, 24, 0.04), 0 8px 24px rgba(23, 25, 24, 0.05);
+}
+
+/* ---------- Card / Surface ---------- */
+.card-surface {
+  background: #FAF8F3;
+  border: 1px solid #D6DDD3;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-surface:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(23, 25, 24, 0.08);
+}
+
+.text-gradient {
+  background: linear-gradient(92deg, #a05a3a 0%, #B96843 45%, #d09a7d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Commit headline: charcoal → teal → terracotta left-to-right */
+.text-gradient-commit {
+  background: linear-gradient(90deg, #18201F 0%, #23877D 50%, #B96843 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Handwritten editorial accent */
+.script-accent {
+  font-family: "Special Elite", "Georgia", ui-serif, serif;
+  font-style: italic;
+  color: rgba(107, 114, 104, 0.45);
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+
+/* Brighter gradient for dark surfaces */
+.text-gradient-on-dark {
+  background: linear-gradient(92deg, #e8cbb8 0%, #d4a088 48%, #f0ddd0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grid-overlay {
+  background-image: linear-gradient(rgba(185, 104, 67, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(185, 104, 67, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* ---------- Keyframe animations ---------- */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-floaty { animation: floaty 6s ease-in-out infinite; }
+
+@keyframes scanline {
+  0%, 100% { top: 8%; }
+  50% { top: 86%; }
+}
+.animate-scanline { animation: scanline 3.2s ease-in-out infinite; }
+
+@keyframes dashflow {
+  to { stroke-dashoffset: -320; }
+}
+.animate-dashflow { animation: dashflow 8s linear infinite; }
+
+/* Hero route line animations — very slow, atmospheric */
+@keyframes hero-route-drift {
+  to { stroke-dashoffset: -280; }
+}
+.hero-route-anim {
+  animation: hero-route-drift 28s linear infinite;
+}
+.hero-route-anim-reverse {
+  animation: hero-route-drift 35s linear infinite reverse;
+}
+.hero-route-anim-down {
+  animation: hero-route-drift 32s linear infinite;
+}
+
+/* Hero network node pulse */
+@keyframes hero-node-pulse {
+  0%, 100% { opacity: 0.25; r: 2; }
+  50% { opacity: 0.55; r: 3.5; }
+}
+.hero-node-pulse {
+  animation: hero-node-pulse 4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -420px 0; }
+  100% { background-position: 420px 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(23,25,24,0.04) 25%, rgba(23,25,24,0.09) 50%, rgba(23,25,24,0.04) 75%);
+  background-size: 420px 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes softpulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.animate-softpulse { animation: softpulse 2.4s ease-in-out infinite; }
+
+@keyframes radar {
+  to { transform: rotate(360deg); }
+}
+.animate-radar { animation: radar 5s linear infinite; transform-origin: center; }
+
+/* ---------- Maximalist landing utilities ---------- */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee-x 30s linear infinite; }
+.animate-marquee-fast { animation: marquee-x 18s linear infinite; }
+.animate-marquee-reverse { animation: marquee-x 36s linear infinite reverse; }
+
+/* ---------- Cinematic journey environment ---------- */
+@keyframes env-warm-up {
+  0%, 12% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #f5f0e8, transparent 50%), #111; }
+  25% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #ece6de, transparent 50%), #111; }
+  37% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #e2dbd2, transparent 50%), #111; }
+  50% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #d8d2ca, transparent 50%), #111; }
+  62% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #cec8c0, transparent 50%), #111; }
+  75% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #c4beb5, transparent 50%), #111; }
+  87% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #b8b4ac, transparent 50%), #111; }
+  100% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #aeaead, transparent 50%), #111; }
+}
+@keyframes env-technical-down {
+  50%, 62% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #1a1612, transparent 50%), #111; }
+  75%, 87% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #0e0a06, transparent 50%), #111; }
+  100% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #050301, transparent 50%), #111; }
+}
+@keyframes env-city-expand {
+  92%, 100% { background: radial-gradient(ellipse 80% 50% at 50% 0%, #2C2F2E, transparent 50%), #111; }
+}
+.animate-env-warm-up { animation: env-warm-up 48s linear infinite; }
+.animate-env-technical-down { animation: env-technical-down 40s linear infinite; }
+.animate-env-city-expand { animation: env-city-expand 36s linear infinite; }
+
+/* ---------- System signal path ---------- */
+.path-signal {
+  stroke: #B96843;
+  stroke-width: 1.5;
+  stroke-dasharray: 40 20;
+  fill: none;
+  opacity: 0.3;
+  transition: opacity 0.4s ease;
+}
+.path-signal.active {
+  opacity: 0.6;
+  stroke-width: 2;
+  animation: signal-pulse 3s ease-in-out infinite;
+}
+@keyframes signal-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 22s linear infinite; }
+
+@keyframes blob-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.08); }
+  66% { transform: translate(-30px, 24px) scale(0.94); }
+}
+.animate-blob { animation: blob-drift 16s ease-in-out infinite; }
+
+@keyframes ticker-pop {
+  0% { transform: translateY(14px); opacity: 0; }
+  18%, 82% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-14px); opacity: 0; }
+}
+.animate-ticker { animation: ticker-pop 2.6s cubic-bezier(0.4,0,0.2,1) infinite; }
+
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+.text-stroke {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(185, 104, 67, 0.2);
+}
+
+/* Cinematic landing story stage */
+.cinematic-stage {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.cinematic-vignette {
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.35));
+}
+
+/* Journey environment textures */
+.journey-env-topo {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpath d='M0 80 Q50 70 100 80 T200 80' fill='none' stroke='%23B96843' stroke-width='0.6' opacity='0.12'/%3E%3Cpath d='M0 40 Q50 30 100 40 T200 40' fill='none' stroke='%23B96843' stroke-width='0.4' opacity='0.08'/%3E%3Cpath d='M0 120 Q50 110 100 120 T200 120' fill='none' stroke='%23B96843' stroke-width='0.4' opacity='0.08'/%3E%3Cpath d='M0 160 Q50 150 100 160 T200 160' fill='none' stroke='%23B96843' stroke-width='0.3' opacity='0.06'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: 0.6;
+}
+
+.journey-env-grid {
+  background-image:
+    linear-gradient(rgba(185,104,67,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(185,104,67,0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.6;
+}
+
+.journey-env-route {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cpath d='M-20 200 C100 180 200 240 400 200' fill='none' stroke='%2323877D' stroke-width='1' stroke-dasharray='8 12' opacity='0.12'/%3E%3Cpath d='M-20 300 C80 280 240 340 400 300' fill='none' stroke='%2323877D' stroke-width='0.6' stroke-dasharray='6 14' opacity='0.08'/%3E%3Ccircle cx='120' cy='200' r='3' fill='%2323877D' opacity='0.15'/%3E%3Ccircle cx='300' cy='220' r='2' fill='%2323877D' opacity='0.1'/%3E%3C/svg%3E");
+  background-size: 400px 400px;
+  opacity: 0.6;
+}
+
+.journey-env-city {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ccircle cx='20' cy='20' r='2' fill='%2323877D' opacity='0.12'/%3E%3Ccircle cx='80' cy='60' r='1.5' fill='%2323877D' opacity='0.08'/%3E%3Ccircle cx='40' cy='90' r='2.5' fill='%2323877D' opacity='0.1'/%3E%3Cline x1='20' y1='20' x2='80' y2='60' stroke='%2323877D' stroke-width='0.3' opacity='0.08'/%3E%3Cline x1='80' y1='60' x2='40' y2='90' stroke='%2323877D' stroke-width='0.3' opacity='0.08'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  opacity: 0.6;
+}
+
+.journey-env-clean {
+  opacity: 0;
+}
+
+/* Animate env transitions */
+.journey-env-layer {
+  transition: opacity 1.2s ease;
+}
+
+/* ---------- Nav link underline hover ---------- */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 1.5px;
+  background: #B96843;
+  transition: width 0.25s ease, left 0.25s ease;
+  border-radius: 1px;
+}
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+  left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-stage {
+    perspective: none;
+  }
+}
+
+/* ---------- Section seam gradients ---------- */
+.seam-light-to-dark {
+  background: linear-gradient(to bottom, #F0EDE6 0%, #2C2F2E 100%);
+}
+.seam-dark-to-light {
+  background: linear-gradient(to bottom, #2C2F2E 0%, #F0EDE6 100%);
+}
+.seam-light-to-journey {
+  background: linear-gradient(to bottom, #F0EDE6 0%, #EDE8DE 100%);
+}
+.seam-journey-to-light {
+  background: linear-gradient(to bottom, #F3EFE7 0%, #FAF8F3 100%);
+}
+
+/* ---------- Feature chip icon tints ---------- */
+.chip-icon-sage {
+  background: rgba(221, 229, 223, 0.5);
+  color: #23877D;
+}
+.chip-icon-terra {
+  background: rgba(185, 104, 67, 0.1);
+  color: #a05a3a;
+}
+
+/* ---------- Stat divider ---------- */
+.stat-divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(30, 33, 32, 0.12);
+}
+
+/* ---------- Handwritten accent ---------- */
+.script-italic {
+  font-family: "Special Elite", "Georgia", ui-serif, serif;
+  font-style: italic;
+  color: rgba(30, 33, 32, 0.55);
+}
+
+/* ---------- Stacked words ---------- */
+.stacked-words {
+  font-family: "Special Elite", "Georgia", ui-serif, serif;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+}
+
+/* ---------- Map callout card ---------- */
+.map-callout {
+  background: rgba(250, 248, 243, 0.96);
+  border: 1px solid rgba(214, 221, 211, 0.7);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(23, 25, 24, 0.08);
+}
