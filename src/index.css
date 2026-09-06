@@ -362,6 +362,12 @@ button:not(:disabled),
   transition: opacity 1.2s ease;
 }
 
+/* Journey camera layer — second clipping boundary. Only backdrop + art live
+   inside; captions/fades are siblings so they never move with the camera. */
+.camera-layer {
+  overflow: hidden;
+}
+
 /* ---------- Nav link underline hover ---------- */
 .nav-link {
   position: relative;

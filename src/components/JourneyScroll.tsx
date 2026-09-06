@@ -1,28 +1,34 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
-/* ═══════════════════════════════════════════════
-   EVENTPULSE CINEMATIC JOURNEY — "You are travelling
-   through EventPulse."
+/* ═══════════════════════════════════════════════════════
+   EVENTPULSE CINEMATIC JOURNEY — "You are travelling through
+   EventPulse."
 
    12 images = 12 shots of ONE continuous film.
-   Scroll = camera. Movement = transition.
-   Background = environment.
+   Scroll = camera. Movement = transition. Background = environment.
 
-   Camera paths are ENDLESS: the end pose of scene N
-   is exactly the start pose of scene N+1, so the
-   camera never resets between shots.
+   Camera paths are ENDLESS: the end pose of scene N is exactly
+   the start pose of scene N+1, so the camera never resets.
 
-   Film dissolve crossfade guarantee:
-   - Outgoing scene stays ≥ 0.5 opaque while incoming fades in.
-   - At least 1 scene always visible. Zero black/blank frames.
-   - Preloaded images ensure zero loading flicker.
-   ═══════════════════════════════════════════════ */
+   Transitions are camera cuts with motion continuity, not
+   equal-opacity crossfades:
+   - incoming scene enters with directional movement + brief motion blur
+   - outgoing scene recedes (soft blur + slight scale) before fading
+   - at every scroll position ≥ 1 scene remains visible (never black)
+
+   After scene 12 an epilogue beat lets the camera settle and the
+   background return to Warm Stone before the page flows into the
+   Orchestration Engine section.
+   ═══════════════════════════════════════════════════════ */
 
 const SCENE_COUNT = 12;
-const OVERLAP_PX = 140;
+const OVERLAP_PX = 150;
 
 /* Per-scene scroll lengths — important beats breathe longer */
 const SCENE_LENGTHS = [420, 400, 400, 500, 420, 500, 560, 440, 420, 500, 440, 460];
+
+/* Closing beat after scene 12 — slow settle into the system section */
+const EPILOGUE_LEN = 420;
 
 /* Precomputed segment boundaries (cumulative) */
 const SEG_START: number[] = [];
@@ -35,7 +41,8 @@ const SEG_END: number[] = [];
     SEG_END.push(acc);
   });
 }
-const TOTAL_SCROLL = SEG_END[SCENE_COUNT - 1];
+const LAST_SEG_END = SEG_END[SCENE_COUNT - 1];
+const TOTAL_SCROLL = LAST_SEG_END + EPILOGUE_LEN;
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
@@ -66,6 +73,7 @@ function lerpColor(a: string, b: string, t: number) {
 
 /* Find the scene whose segment contains the current scroll position */
 function findSegment(scroll: number): number {
+  if (scroll >= TOTAL_SCROLL) return SCENE_COUNT - 1;
   let idx = 0;
   for (let i = 0; i < SCENE_COUNT; i++) {
     if (scroll >= SEG_START[i]) idx = i;
@@ -79,132 +87,121 @@ interface SceneData {
   label: string;
   sublabel: string;
   bgStart: string;
-  bgEnd: string;
   radial: string;
   env: "topo" | "grid" | "route" | "city" | "clean";
 }
 
+/* Bg colors follow the EventPulse palette as one continuous arc:
+   Warm Stone · Soft Sage · Deep Green · Burnt Terracotta · Deep Teal · Soft Surface */
 const SCENES: SceneData[] = [
   {
     src: "/images/journey/journey-01.png",
     label: "DISCOVER",
     sublabel: "A new event is coming to town.",
-    bgStart: "#F7F3EA",
-    bgEnd: "#F1ECE0",
+    bgStart: "#F3EFE7",
     radial: "rgba(201,166,107,0.14)",
     env: "topo",
   },
   {
     src: "/images/journey/journey-02.png",
     label: "PLAN",
-    sublabel: "Entering the planning experience.",
-    bgStart: "#F1ECE0",
-    bgEnd: "#ECE5D8",
+    sublabel: "Every detail, planned ahead.",
+    bgStart: "#F3EFE7",
     radial: "rgba(35,135,125,0.12)",
     env: "topo",
   },
   {
     src: "/images/journey/journey-03.png",
     label: "CHOOSE",
-    sublabel: "What works best for me?",
-    bgStart: "#ECE5D8",
-    bgEnd: "#E3DACB",
+    sublabel: "The right option, not the obvious one.",
+    bgStart: "#F3EFE7",
     radial: "rgba(185,104,67,0.14)",
     env: "grid",
   },
   {
     src: "/images/journey/journey-04.png",
-    label: "OPTIMIZE",
-    sublabel: "Prediction backed by live capacity.",
-    bgStart: "#DCE2D4",
-    bgEnd: "#D3DCCB",
+    label: "SMART RECOMMENDATIONS",
+    sublabel: "Prediction backed by live conditions.",
+    bgStart: "#DDE5DF",
     radial: "rgba(35,135,125,0.16)",
     env: "route",
   },
   {
     src: "/images/journey/journey-05.png",
-    label: "MOVE",
-    sublabel: "Horizontal tracking through the city.",
-    bgStart: "#D3DCCB",
-    bgEnd: "#C3CDC0",
+    label: "LIVE CROWD",
+    sublabel: "The city, reading itself in real time.",
+    bgStart: "#DDE5DF",
     radial: "rgba(35,135,125,0.16)",
     env: "route",
   },
   {
     src: "/images/journey/journey-06.png",
-    label: "LIVE CROWD",
-    sublabel: "Reading real-time crowd pressure.",
-    bgStart: "#C3CDC0",
-    bgEnd: "#A3B1A4",
-    radial: "rgba(24,32,31,0.28)",
+    label: "ALERTS",
+    sublabel: "Know before it becomes a problem.",
+    bgStart: "#18201F",
+    radial: "rgba(24,32,31,0.30)",
     env: "route",
   },
   {
     src: "/images/journey/journey-07.png",
-    label: "REDIRECT",
-    sublabel: "EventPulse changes the journey.",
-    bgStart: "#C08A64",
-    bgEnd: "#3A5A55",
+    label: "ARRIVAL",
+    sublabel: "EventPulse picks the calmer road.",
+    bgStart: "#B96843",
     radial: "rgba(185,104,67,0.26)",
     env: "grid",
   },
   {
     src: "/images/journey/journey-08.png",
-    label: "ARRIVE",
-    sublabel: "Calm entry along the new route.",
-    bgStart: "#3A5A55",
-    bgEnd: "#2E4E48",
-    radial: "rgba(46,78,72,0.24)",
+    label: "EXPERIENCE",
+    sublabel: "Every arrival, in full colour.",
+    bgStart: "#B96843",
+    radial: "rgba(185,104,67,0.22)",
     env: "route",
   },
   {
     src: "/images/journey/journey-09.png",
-    label: "EXPERIENCE",
-    sublabel: "Inside the event — celebratory & bright.",
-    bgStart: "#D89B6A",
-    bgEnd: "#CD8D5F",
-    radial: "rgba(216,155,106,0.22)",
+    label: "CONNECTED CITY",
+    sublabel: "Venues, transit and events — one system.",
+    bgStart: "#23877D",
+    radial: "rgba(35,135,125,0.20)",
     env: "city",
   },
   {
     src: "/images/journey/journey-10.png",
-    label: "CONNECT",
-    sublabel: "Revealing the connected city around it.",
-    bgStart: "#CD8D5F",
-    bgEnd: "#C08157",
-    radial: "rgba(200,138,94,0.20)",
+    label: "REAL IMPACT",
+    sublabel: "The whole city, in one frame.",
+    bgStart: "#23877D",
+    radial: "rgba(35,135,125,0.18)",
     env: "city",
   },
   {
     src: "/images/journey/journey-11.png",
-    label: "IMPACT",
-    sublabel: "Events, transport, venues — one picture.",
-    bgStart: "#C08157",
-    bgEnd: "#B57A52",
+    label: "BRIGHTER DAYS",
+    sublabel: "Better decisions, city-wide.",
+    bgStart: "#23877D",
     radial: "rgba(35,135,125,0.16)",
     env: "city",
   },
   {
     src: "/images/journey/journey-12.png",
-    label: "BRIGHTER TOMORROW",
-    sublabel: "Smarter crowds. Brighter events.",
-    bgStart: "#F5EFE3",
-    bgEnd: "#FAF6EE",
+    label: "EVENTPULSE CLOSE",
+    sublabel: "Always on time. Always ahead.",
+    bgStart: "#FAF8F3",
     radial: "rgba(185,104,67,0.10)",
     env: "clean",
   },
 ];
 
-/* ═══════════════════════════════════════════════
+/* Per-scene subtle brightness / contrast tuning */
+const ART_BRIGHTNESS = [1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 1.02, 1.02, 1.05, 1.06, 1.05, 1.04];
+const ART_CONTRAST = [1.0, 1.0, 1.0, 1.0, 1.0, 1.04, 1.0, 1.0, 1.0, 1.0, 1.0, 0.98];
+
+/* ═══════════════════════════════════════════════════════
    CONTINUOUS CAMERA CHOREOGRAPHY
 
    end state of scene i  ==  start state of scene i+1.
-   The camera is ONE continuous lens travelling the story:
-   phone → app → choice → recommendation → route → road →
-   venue → event → city → tomorrow.
-
-   tx/ty = translate in vw/vh · sc = scale · blur = gaussian · rot = deg
-   ═══════════════════════════════════════════════ */
+   tx/ty = translate in vw/vh · sc = scale · blur = px · rot = deg
+   ═══════════════════════════════════════════════════════ */
 interface CamState {
   tx: number;
   ty: number;
@@ -217,67 +214,70 @@ interface CamKey {
   end: CamState;
 }
 
+/* All poses are kept within a tight framing band (±<=1.2vw / ty≈-1..2.8vh,
+   scale 1.0–1.3) so the subject stays inside the 100vh stage. Scene 01
+   begins exactly centered (0,0,1.0) — the first visible frame is fully
+   composed, then the camera eases forward. */
 const CAMERAS: CamKey[] = [
-  // 01 DISCOVER — open slightly wide, then slow push into the phone
+  // 01 DISCOVER — begins CENTERED, then a subtle forward push
   {
-    start: { tx: 2.2, ty: 1.2, sc: 1.04, blur: 1.2, rot: 0 },
-    end:   { tx: 0.0, ty: 0.3, sc: 1.14, blur: 0.1, rot: 0 },
+    start: { tx: 0.0, ty: 0.0, sc: 1.0, blur: 0.8, rot: 0 },
+    end:   { tx: 0.4, ty: 0.3, sc: 1.08, blur: 0.08, rot: 0 },
   },
-  // 02 PLAN — continue the same lens, move deeper into planning
+  // 02 PLAN — gentle forward drift
   {
-    start: { tx: 0.0, ty: 0.3, sc: 1.14, blur: 0.1, rot: 0 },
-    end:   { tx: 0.4, ty: -0.3, sc: 1.2, blur: 0.2, rot: -0.3 },
+    start: { tx: 0.4, ty: 0.3, sc: 1.08, blur: 0.08, rot: 0 },
+    end:   { tx: 0.7, ty: -0.3, sc: 1.12, blur: 0.15, rot: 0.2 },
   },
-  // 03 CHOOSE — gentle horizontal drift, exploring the options
+  // 03 CHOOSE — subtle horizontal movement
   {
-    start: { tx: 0.4, ty: -0.3, sc: 1.2, blur: 0.2, rot: -0.3 },
-    end:   { tx: -1.4, ty: -0.15, sc: 1.22, blur: 0.3, rot: 0.4 },
+    start: { tx: 0.7, ty: -0.3, sc: 1.12, blur: 0.15, rot: 0.2 },
+    end:   { tx: -0.8, ty: -0.15, sc: 1.15, blur: 0.2, rot: 0.3 },
   },
-  // 04 OPTIMIZE — slow, deliberate push toward the recommendation
+  // 04 SMART RECOMMENDATIONS — deeper push toward the visual focus
   {
-    start: { tx: -1.4, ty: -0.15, sc: 1.22, blur: 0.3, rot: 0.4 },
-    end:   { tx: -0.3, ty: 0.15, sc: 1.36, blur: 0.05, rot: 0 },
+    start: { tx: -0.8, ty: -0.15, sc: 1.15, blur: 0.2, rot: 0.3 },
+    end:   { tx: -0.1, ty: 0.2, sc: 1.24, blur: 0.05, rot: 0.1 },
   },
-  // 05 MOVE — shift into horizontal tracking along the route
+  // 05 LIVE CROWD — horizontal tracking
   {
-    start: { tx: -0.3, ty: 0.15, sc: 1.36, blur: 0.05, rot: 0 },
-    end:   { tx: 2.8, ty: 0.1, sc: 1.3, blur: 0.2, rot: -1.0 },
+    start: { tx: -0.1, ty: 0.2, sc: 1.24, blur: 0.05, rot: 0.1 },
+    end:   { tx: 1.2, ty: 0.15, sc: 1.2, blur: 0.18, rot: -0.5 },
   },
-  // 06 LIVE CROWD — intensity builds, subtle zoom toward the crowd
+  // 06 ALERTS — controlled zoom, emphasis
   {
-    start: { tx: 2.8, ty: 0.1, sc: 1.3, blur: 0.2, rot: -1.0 },
-    end:   { tx: 1.8, ty: 0.5, sc: 1.44, blur: 0.3, rot: -0.5 },
+    start: { tx: 1.2, ty: 0.15, sc: 1.2, blur: 0.18, rot: -0.5 },
+    end:   { tx: 0.9, ty: 0.35, sc: 1.3, blur: 0.28, rot: -0.3 },
   },
-  // 07 REDIRECT — THE DIRECTION CHANGE: swing away from the crowded
-  // route and follow the alternative. EventPulse changes the journey.
+  // 07 ARRIVAL — directional movement navigating toward the destination
   {
-    start: { tx: 1.8, ty: 0.5, sc: 1.44, blur: 0.3, rot: -0.5 },
-    end:   { tx: -2.4, ty: 0.0, sc: 1.3, blur: 0.5, rot: 1.4 },
+    start: { tx: 0.9, ty: 0.35, sc: 1.3, blur: 0.28, rot: -0.3 },
+    end:   { tx: -0.9, ty: -0.2, sc: 1.22, blur: 0.4, rot: 0.5 },
   },
-  // 08 ARRIVAL — continue from 07, follow the route to the venue, calm
+  // 08 EXPERIENCE — forward movement, arrival
   {
-    start: { tx: -2.4, ty: 0.0, sc: 1.3, blur: 0.5, rot: 1.4 },
-    end:   { tx: -0.5, ty: -0.6, sc: 1.4, blur: 0.1, rot: 0 },
+    start: { tx: -0.9, ty: -0.2, sc: 1.22, blur: 0.4, rot: 0.5 },
+    end:   { tx: -0.4, ty: -0.6, sc: 1.3, blur: 0.1, rot: 0.3 },
   },
-  // 09 EXPERIENCE — move INTO the event; warm, bright, energetic payoff
+  // 09 CONNECTED CITY — slight lateral / environmental movement
   {
-    start: { tx: -0.5, ty: -0.6, sc: 1.4, blur: 0.1, rot: 0 },
-    end:   { tx: 0.3, ty: -1.6, sc: 1.52, blur: 0.1, rot: 0.5 },
+    start: { tx: -0.4, ty: -0.6, sc: 1.3, blur: 0.1, rot: 0.3 },
+    end:   { tx: 0.3, ty: -0.9, sc: 1.26, blur: 0.15, rot: 0.2 },
   },
-  // 10 CONNECT — REVERSE DIRECTION: dramatic pull-back revealing the city
+  // 10 REAL IMPACT — reverse direction, begin pulling the camera back
   {
-    start: { tx: 0.3, ty: -1.6, sc: 1.52, blur: 0.1, rot: 0.5 },
-    end:   { tx: 0.0, ty: 2.8, sc: 1.08, blur: 0.9, rot: 0 },
+    start: { tx: 0.3, ty: -0.9, sc: 1.26, blur: 0.15, rot: 0.2 },
+    end:   { tx: 0.0, ty: 1.2, sc: 1.04, blur: 0.7, rot: 0 },
   },
-  // 11 IMPACT — continue pulling back; the connected city is the subject
+  // 11 BRIGHTER DAYS — continue the slow pullback, room to breathe
   {
-    start: { tx: 0.0, ty: 2.8, sc: 1.08, blur: 0.9, rot: 0 },
-    end:   { tx: 0.0, ty: 4.4, sc: 0.96, blur: 1.1, rot: 0 },
+    start: { tx: 0.0, ty: 1.2, sc: 1.04, blur: 0.7, rot: 0 },
+    end:   { tx: 0.0, ty: 2.0, sc: 0.97, blur: 0.9, rot: 0 },
   },
-  // 12 BRIGHTER TOMORROW — slow emotional pull-back to a clean warm ending
+  // 12 EVENTPULSE CLOSE — elegant slow pullback; epilogue extends it
   {
-    start: { tx: 0.0, ty: 4.4, sc: 0.96, blur: 1.1, rot: 0 },
-    end:   { tx: 0.0, ty: 5.4, sc: 0.88, blur: 0.9, rot: 0 },
+    start: { tx: 0.0, ty: 2.0, sc: 0.97, blur: 0.9, rot: 0 },
+    end:   { tx: 0.0, ty: 2.8, sc: 0.92, blur: 0.8, rot: 0 },
   },
 ];
 
@@ -293,15 +293,37 @@ function getCamera(i: number, p: number): CamState {
   };
 }
 
+interface StageEls {
+  scenes: HTMLDivElement[];
+  cams: HTMLDivElement[];
+  labels: HTMLDivElement[];
+  backs: HTMLImageElement[];
+  arts: HTMLImageElement[];
+  bg: HTMLDivElement | null;
+  radial: HTMLDivElement | null;
+  eTopo: HTMLDivElement | null;
+  eGrid: HTMLDivElement | null;
+  eRoute: HTMLDivElement | null;
+  eCity: HTMLDivElement | null;
+  fin: HTMLDivElement | null;
+  vignette: HTMLDivElement | null;
+  grain: HTMLDivElement | null;
+}
+
 export default function JourneyScroll() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
   const smoothScrollRef = useRef(0);
   const loadedRef = useRef<Set<number>>(new Set());
+  const elsRef = useRef<StageEls | null>(null);
+  const envEase = useRef({ topo: 0, grid: 0, route: 0, city: 0 });
+  const vigEase = useRef(0.14);
+  const grainEase = useRef(0.02);
+  const radialEase = useRef(1);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  /* Eager image preloading on mount */
+  /* Eager image preloading on mount — zero black frames */
   useEffect(() => {
     SCENES.forEach((scene, i) => {
       const img = new Image();
@@ -321,26 +343,35 @@ export default function JourneyScroll() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
+  /* Cache DOM nodes once (perf: no per-frame querySelectorAll) */
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    elsRef.current = {
+      scenes: Array.from(stage.querySelectorAll<HTMLDivElement>("[data-scene]")),
+      cams: Array.from(stage.querySelectorAll<HTMLDivElement>("[data-scene] > [data-camera]")),
+      labels: Array.from(stage.querySelectorAll<HTMLDivElement>("[data-label]")),
+      backs: Array.from(stage.querySelectorAll<HTMLImageElement>("[data-backdrop]")),
+      arts: Array.from(stage.querySelectorAll<HTMLImageElement>("[data-art]")),
+      bg: stage.querySelector<HTMLDivElement>("[data-bg]"),
+      radial: stage.querySelector<HTMLDivElement>("[data-radial]"),
+      eTopo: stage.querySelector<HTMLDivElement>("[data-env-topo]"),
+      eGrid: stage.querySelector<HTMLDivElement>("[data-env-grid]"),
+      eRoute: stage.querySelector<HTMLDivElement>("[data-env-route]"),
+      eCity: stage.querySelector<HTMLDivElement>("[data-env-city]"),
+      fin: stage.querySelector<HTMLDivElement>("[data-fin]"),
+      vignette: stage.querySelector<HTMLDivElement>("[data-vignette]"),
+      grain: stage.querySelector<HTMLDivElement>("[data-grain]"),
+    };
+  }, []);
+
   const tick = useCallback(() => {
     const wrapper = wrapperRef.current;
-    const stage = stageRef.current;
-    if (!wrapper || !stage) {
+    const els = elsRef.current;
+    if (!wrapper || !els) {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
-
-    const wraps = stage.querySelectorAll<HTMLDivElement>("[data-scene]");
-    const labels = stage.querySelectorAll<HTMLDivElement>("[data-label]");
-    const backdrops = stage.querySelectorAll<HTMLImageElement>("[data-backdrop]");
-    const artworks = stage.querySelectorAll<HTMLImageElement>("[data-art]");
-    const bgEl = stage.querySelector<HTMLDivElement>("[data-bg]");
-    const radialE = stage.querySelector<HTMLDivElement>("[data-radial]");
-    const eTopo = stage.querySelector<HTMLDivElement>("[data-env-topo]");
-    const eGrid = stage.querySelector<HTMLDivElement>("[data-env-grid]");
-    const eRoute = stage.querySelector<HTMLDivElement>("[data-env-route]");
-    const eCity = stage.querySelector<HTMLDivElement>("[data-env-city]");
-    const pLine = stage.querySelector<HTMLDivElement>("[data-progress]");
-    const cEl = stage.querySelector<HTMLDivElement>("[data-counter]");
 
     const visibleH = window.innerHeight;
     const rect = wrapper.getBoundingClientRect();
@@ -352,92 +383,145 @@ export default function JourneyScroll() {
       : smoothScrollRef.current + (rawScroll - smoothScrollRef.current) * 0.09;
     const scroll = smoothScrollRef.current;
 
-    /* ═══════════════════════════════════════════════
-       FILM DISSOLVE CROSSFADE ENGINE (segment based)
-       Scene A dominant → A+B blended → B dominant.
-       At every scroll position ≥ 1 scene is ≥ 0.5 opaque.
-       ═══════════════════════════════════════════════ */
+    /* Epilogue proportion: the closing beat after scene 12 */
+    const epRaw = scroll > LAST_SEG_END ? (scroll - LAST_SEG_END) / EPILOGUE_LEN : 0;
+    const ep = smoothstep(clamp(epRaw, 0, 1));
+    const epSmooth = reducedMotion ? 0.5 : ep;
 
     const currentIdx = findSegment(scroll);
 
+    /* ═══════════════════════════════════════════════════
+       FILM DISSOLVE ENGINE (cover-dissolve)
+
+       Incoming ramps 0→1 while outgoing HOLDS, then shelves
+       off quickly once the incoming is dominant. No extended
+       50/50 double-image crossfade. ≥1 scene always visible.
+       ═══════════════════════════════════════════════════ */
     for (let i = 0; i < SCENE_COUNT; i++) {
-      const w = wraps[i];
-      if (!w) continue;
+      const s = els.scenes[i];
+      const camEl = els.cams[i];
+      if (!s || !camEl) continue;
 
       const iSegStart = SEG_START[i];
       const iSegEnd = SEG_END[i];
-
-      let opacity = 0;
+      const isLast = i === SCENE_COUNT - 1;
 
       const fadeInStart = iSegStart - OVERLAP_PX;
       const fadeInEnd = iSegStart;
       const fadeOutStart = iSegEnd - OVERLAP_PX;
       const fadeOutEnd = iSegEnd;
 
+      let opacity = 0;
+      let transition = 0; // 0..1 identifying mid-transition motion energy
+
       if (i === 0 && scroll < fadeInEnd) {
-        // First scene is always fully visible before the scrolling begins
+        // First scene is fully present before scrolling begins
         opacity = 1.0;
       } else if (scroll >= fadeInStart && scroll < fadeInEnd) {
-        // Incoming phase: fade from 0 to 1
-        const t = (scroll - fadeInStart) / OVERLAP_PX;
-        opacity = smoothstep(t);
+        // Incoming: ramps 0 → 1
+        const s = smoothstep((scroll - fadeInStart) / OVERLAP_PX);
+        opacity = s;
+        transition = s;
       } else if (scroll >= fadeInEnd && scroll < fadeOutStart) {
-        // Dominant phase: fully visible
+        // Dominant: fully visible
         opacity = 1.0;
       } else if (scroll >= fadeOutStart && scroll < fadeOutEnd) {
-        // Outgoing phase: fade from 1 to 0.5 — NEVER below 0.5
-        if (i === SCENE_COUNT - 1) {
-          opacity = 1.0; // Last scene stays visible
-        } else {
-          const t = (scroll - fadeOutStart) / OVERLAP_PX;
-          opacity = 1.0 - 0.5 * smoothstep(t);
-        }
-      } else if (scroll >= fadeOutEnd && scroll < fadeOutEnd + OVERLAP_PX) {
-        // Post-outgoing phase: fade from 0.5 to 0 after incoming is dominant
-        if (i === SCENE_COUNT - 1) {
+        // Outgoing: hold, then shelf off as the incoming becomes dominant
+        if (isLast) {
           opacity = 1.0;
         } else {
-          const t = (scroll - fadeOutEnd) / OVERLAP_PX;
-          opacity = 0.5 * (1.0 - smoothstep(t));
+          const s = smoothstep((scroll - fadeOutStart) / OVERLAP_PX);
+          opacity = 1.0 - smoothstep(Math.max(0, (s - 0.42) / 0.52));
+          transition = s;
+        }
+      } else if (scroll >= fadeOutEnd && scroll < fadeOutEnd + OVERLAP_PX) {
+        // Post-outgoing: residual leaps off frame after incoming dominates
+        if (isLast) {
+          opacity = 1.0;
+        } else {
+          const t = smoothstep((scroll - fadeOutEnd) / OVERLAP_PX);
+          opacity = 0.3 * (1.0 - t);
+          transition = t;
         }
       }
 
-      w.style.opacity = String(opacity);
+      s.style.opacity = String(opacity);
 
-      /* ═══════════════════════════════════════════
-         CAMERA + PARALLAX
-         The wrapper carries the full camera pose.
-         Backdrop and artwork add counter-drift so the
-         scene reads as layered depth, not a flat card.
-         ═══════════════════════════════════════════ */
+      /* ═══════════════════════════════════════════════
+         CAMERA + PARALLAX + TRANSITION MOTION
+         The camera-layer (backdrop + art ONLY) carries the
+         full camera pose. Captions and fades are siblings of
+         the camera-layer, so they never scale/translate/rotate
+         with the camera — only their opacity/translateY fade
+         (handled separately above) affects them.
+         ═══════════════════════════════════════════════ */
       const visibleStart = i === 0 ? 0 : fadeInStart;
-      const visibleEnd = i === SCENE_COUNT - 1 ? fadeOutEnd : fadeOutEnd + OVERLAP_PX;
+      const visibleEnd = isLast ? fadeOutEnd : fadeOutEnd + OVERLAP_PX;
       const progress = clamp((scroll - visibleStart) / (visibleEnd - visibleStart), 0, 1);
 
-      const cam = reducedMotion ? getCamera(i, 0.5) : getCamera(i, progress);
-      const blurAmt = reducedMotion ? 0 : cam.blur;
+      let cam = reducedMotion ? getCamera(i, 0.5) : getCamera(i, progress);
 
-      w.style.transform = `translate(${cam.tx}vw, ${cam.ty}vh) scale(${cam.sc}) rotate(${cam.rot}deg)`;
-      w.style.filter = blurAmt > 0.05 ? `blur(${blurAmt}px)` : "none";
-      if (w.style.filter === "blur(0px)") w.style.filter = "none";
+      /* Epilogue: continue the final pull-back so scene 12 settles */
+      if (isLast && scroll >= iSegEnd) {
+        const e = CAMERAS[SCENE_COUNT - 1].end;
+        cam = {
+          tx: e.tx,
+          ty: e.ty + 1.4 * (reducedMotion ? 0.5 : epSmooth),
+          sc: e.sc - 0.09 * (reducedMotion ? 0.5 : epSmooth),
+          blur: lerp(e.blur, 0.6, epSmooth),
+          rot: 0,
+        };
+      }
 
-      const back = backdrops[i];
+      /* Directional entry offset — the incoming scene "arrives" from the
+         direction the camera is already travelling (clamped so it never
+         pushes the artwork out of the viewport) */
+      const k = CAMERAS[i];
+      const dirX = k.end.tx - k.start.tx;
+      const dirY = k.end.ty - k.start.ty;
+      const entry = !reducedMotion ? (1 - smoothstep(transition)) : 0;
+      const entryX = clamp(dirX, -1.0, 1.0) * 1.2 * entry;
+      const entryY = clamp(dirY, -1.0, 1.0) * 1.2 * entry;
+
+      /* Motion blur peak at the middle of a transition (camera-like) */
+      const motionBlur = !reducedMotion
+        ? (opacity > 0 && opacity < 1 && transition > 0
+            ? 8 * Math.sin(Math.PI * clamp(transition, 0, 1))
+            : 0)
+        : 0;
+
+      /* Outgoing micro recession — very slight pull-back as it yields */
+      const recess = !reducedMotion && opacity < 1 && opacity > 0 && i < SCENE_COUNT - 1
+        ? 0.02 * Math.sin(Math.PI * clamp(transition, 0, 1))
+        : 0;
+
+      const blurAmt = reducedMotion ? 0 : cam.blur + motionBlur;
+
+      camEl.style.transform =
+        `translate(${cam.tx + entryX}vw, ${cam.ty + entryY}vh) ` +
+        `scale(${cam.sc * (1 + recess)}) rotate(${cam.rot}deg)`;
+      camEl.style.filter = blurAmt > 0.05 ? `blur(${blurAmt.toFixed(2)}px)` : "none";
+
+      const back = els.backs[i];
       if (back) {
-        // Far layer — moves slower than the camera (parallax depth)
-        back.style.transform = `translate(${cam.tx * -0.55}vw, ${cam.ty * -0.55}vh) scale(1.25)`;
+        // Far layer — counter-drift for depth (restrained)
+        back.style.transform = `translate(${cam.tx * -0.5}vw, ${cam.ty * -0.5}vh) scale(1.25)`;
       }
 
-      const art = artworks[i];
+      const art = els.arts[i];
       if (art) {
-        // Near layer — drifts slightly more than the camera
-        art.style.transform = `translate(${cam.tx * 0.28}vw, ${cam.ty * 0.28}vh) scale(1)`;
+        // Near layer — subtle extra drift for depth
+        art.style.transform = `translate(${cam.tx * 0.24}vw, ${cam.ty * 0.24}vh) scale(1)`;
+        art.style.filter =
+          `drop-shadow(0 24px 60px rgba(0,0,0,0.28)) ` +
+          `brightness(${ART_BRIGHTNESS[i]}) contrast(${ART_CONTRAST[i]})`;
       }
 
-      /* Editorial label transition */
-      const lbl = labels[i];
+      /* Editorial label — brief, framed to each shot */
+      const lbl = els.labels[i];
       if (lbl) {
         const labelIn = smoothstep((scroll - (iSegStart - 40)) / 60);
-        const labelOut = smoothstep((scroll - (iSegEnd - 60)) / 60);
+        const labelOut = smoothstep((scroll - (isLast ? iSegEnd + 120 : iSegEnd - 60)) / 60);
         const labelAlpha = labelIn * (1 - labelOut);
         lbl.style.opacity = String(labelAlpha * 0.9);
         lbl.style.transform = `translateY(${(1 - labelIn) * 16}px)`;
@@ -445,55 +529,66 @@ export default function JourneyScroll() {
     }
 
     /* ═══════════════════════════════════════════════
-       CONTINUOUS BACKGROUND COLOR EVOLUTION
-       Blends the scene "color bands" into one smooth arc:
-       01-03 warm ivory/stone → 04-06 sage to deep charcoal →
-       07-08 terracotta + teal → 09-11 sunset city → 12 clean ivory
+       CONTINUOUS BACKGROUND EVOLUTION
+       One smooth arc through the EventPulse palette —
+       no abrupt colour jumps.
        ═══════════════════════════════════════════════ */
-    if (bgEl) {
-      const globalProgress = clamp(scroll / TOTAL_SCROLL, 0, 0.999);
-      const floatIdx = globalProgress * (SCENE_COUNT - 1);
-      const bgIdx = Math.floor(floatIdx);
-      const bgFrac = floatIdx - bgIdx;
-      const nextBgIdx = Math.min(bgIdx + 1, SCENE_COUNT - 1);
-
-      const blendedColor = lerpColor(
-        SCENES[bgIdx].bgStart,
-        SCENES[nextBgIdx].bgStart,
-        smoothstep(bgFrac)
-      );
-      bgEl.style.backgroundColor = blendedColor;
-    }
-
-    /* Radial atmospheric lighting — drifts subtly with the camera */
-    const curCam = getCamera(currentIdx, clamp((scroll - SEG_START[currentIdx]) / SCENE_LENGTHS[currentIdx], 0, 1));
-    if (radialE) {
-      radialE.style.background = `radial-gradient(ellipse 75% 55% at 50% 45%, ${SCENES[currentIdx].radial}, transparent)`;
-      radialE.style.transform = `translate(${curCam.tx * -0.6}vw, ${curCam.ty * -0.6}vh)`;
-    }
-
-    /* Environment texture layers — crossfade + subtle camera drift */
-    const currentEnv = SCENES[currentIdx].env;
-    const envDrift = `translate(${curCam.tx * -0.8}vw, ${curCam.ty * -0.8}vh)`;
-    const envMap: Record<string, HTMLDivElement | null> = {
-      topo: eTopo,
-      grid: eGrid,
-      route: eRoute,
-      city: eCity,
-    };
-    for (const [key, el] of Object.entries(envMap)) {
-      if (el) {
-        el.style.opacity = currentEnv === key ? "0.55" : "0";
-        el.style.transform = envDrift;
+    if (els.bg) {
+      if (ep > 0) {
+        // Epilogue: settle naturally into Warm Stone
+        els.bg.style.backgroundColor = lerpColor("#FAF8F3", "#F3EFE7", epSmooth);
+      } else {
+        const globalProgress = clamp(scroll / TOTAL_SCROLL, 0, 0.999);
+        const floatIdx = globalProgress * (SCENE_COUNT - 1);
+        const bgIdx = Math.floor(floatIdx);
+        const bgFrac = floatIdx - bgIdx;
+        const nextBgIdx = Math.min(bgIdx + 1, SCENE_COUNT - 1);
+        els.bg.style.backgroundColor = lerpColor(
+          SCENES[bgIdx].bgStart,
+          SCENES[nextBgIdx].bgStart,
+          smoothstep(bgFrac)
+        );
       }
     }
 
-    /* Progress counter & bar */
-    if (cEl) {
-      cEl.textContent = `${String(currentIdx + 1).padStart(2, "0")} / ${String(SCENE_COUNT).padStart(2, "0")}`;
+    /* Radial atmosphere — light source drifts gently with the camera */
+    if (els.radial) {
+      const curCam = getCamera(currentIdx, clamp((scroll - SEG_START[currentIdx]) / SCENE_LENGTHS[currentIdx], 0, 1));
+      radialEase.current += (1 - 0.85 * epSmooth - radialEase.current) * 0.12;
+      els.radial.style.backgroundColor = SCENES[currentIdx].radial;
+      els.radial.style.background = `radial-gradient(ellipse 75% 55% at 50% 45%, ${SCENES[currentIdx].radial}, transparent)`;
+      els.radial.style.transform = `translate(${curCam.tx * -0.6}vw, ${curCam.ty * -0.6}vh)`;
+      els.radial.style.opacity = String(radialEase.current);
     }
-    if (pLine) {
-      pLine.style.transform = `scaleX(${clamp(scroll / TOTAL_SCROLL, 0, 1)})`;
+
+    /* Environment texture layers — eased crossfade + camera drift */
+    const currentEnv = SCENES[currentIdx].env;
+    const curCamEnv = getCamera(currentIdx, clamp((scroll - SEG_START[currentIdx]) / SCENE_LENGTHS[currentIdx], 0, 1));
+    const envDrift = `translate(${curCamEnv.tx * -0.8}vw, ${curCamEnv.ty * -0.8}vh)`;
+    const envList = [
+      ["topo", els.eTopo],
+      ["grid", els.eGrid],
+      ["route", els.eRoute],
+      ["city", els.eCity],
+    ] as const;
+    for (const [key, el] of envList) {
+      if (!el) continue;
+      const target = ep > 0 || currentEnv === key ? (currentEnv === key ? 0.55 : 0) : 0;
+      envEase.current[key] += (target - envEase.current[key]) * 0.14;
+      el.style.opacity = String(envEase.current[key]);
+      el.style.transform = envDrift;
+    }
+
+    /* Epilogue softens grain + vignette for a clean settle */
+    vigEase.current += (0.14 * (1 - 0.6 * epSmooth) - vigEase.current) * 0.1;
+    grainEase.current += (0.02 * (1 - 0.6 * epSmooth) - grainEase.current) * 0.1;
+    if (els.vignette) els.vignette.style.opacity = String(vigEase.current);
+    if (els.grain) els.grain.style.opacity = String(grainEase.current);
+
+    /* Closing narration caption for the epilogue */
+    if (els.fin) {
+      els.fin.style.opacity = String(smoothstep((epSmooth - 0.3) / 0.45) * 0.9);
+      els.fin.style.transform = `translateY(${(1 - smoothstep((epSmooth - 0.3) / 0.45)) * 14}px)`;
     }
 
     rafRef.current = requestAnimationFrame(tick);
@@ -511,7 +606,7 @@ export default function JourneyScroll() {
       <div
         ref={stageRef}
         className="sticky inset-0 overflow-hidden"
-        style={{ top: 0, height: "100vh" }}
+        style={{ top: 0, width: "100%", height: "100vh" }}
       >
         {/* ── Continuous background base ── */}
         <div data-bg className="absolute inset-0" style={{ backgroundColor: SCENES[0].bgStart }} />
@@ -521,56 +616,73 @@ export default function JourneyScroll() {
 
         {/* ── Environment texture layers (drift with camera) ── */}
         <div className="absolute inset-0 pointer-events-none">
-          <div data-env-topo className="journey-env-layer journey-env-topo absolute inset-0 opacity-0 will-change-transform" />
-          <div data-env-grid className="journey-env-layer journey-env-grid absolute inset-0 opacity-0 will-change-transform" />
-          <div data-env-route className="journey-env-layer journey-env-route absolute inset-0 opacity-0 will-change-transform" />
-          <div data-env-city className="journey-env-layer journey-env-city absolute inset-0 opacity-0 will-change-transform" />
+          {(["topo", "grid", "route", "city"] as const).map((key) => (
+            <div
+              key={key}
+              data-env-topo={key === "topo" ? "" : undefined}
+              data-env-grid={key === "grid" ? "" : undefined}
+              data-env-route={key === "route" ? "" : undefined}
+              data-env-city={key === "city" ? "" : undefined}
+              className={`journey-env-layer journey-env-${key} absolute inset-0 will-change-transform`}
+              style={{ opacity: 0, transition: "none" }}
+            />
+          ))}
         </div>
 
         {/* ── Subtle film grain ── */}
-        <div className="grain absolute inset-0 pointer-events-none" style={{ opacity: 0.02 }} />
+        <div data-grain className="grain absolute inset-0 pointer-events-none" style={{ opacity: 0.02 }} />
 
         {/* ── Cinematic vignette ── */}
-        <div className="cinematic-vignette absolute inset-0 pointer-events-none" style={{ opacity: 0.14 }} />
+        <div data-vignette className="cinematic-vignette absolute inset-0 pointer-events-none" style={{ opacity: 0.14 }} />
 
         {/* ── 12 Scene layers ── */}
         {SCENES.map((scene, i) => (
           <div
             key={scene.src}
             data-scene
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ opacity: 0, zIndex: i + 1, willChange: "opacity, transform, filter" }}
+            className="absolute inset-0"
+            style={{ opacity: 0, zIndex: i + 1, willChange: "opacity" }}
           >
-            {/* Soft atmospheric blurred background fill (parallax far layer) */}
-            <img
-              data-backdrop
-              src={scene.src}
-              alt=""
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover will-change-transform"
-              style={{
-                filter: "blur(54px) brightness(0.68) saturate(0.9)",
-                transform: "scale(1.25)",
-              }}
-            />
+            {/* Camera layer — ONLY backdrop + art move/scale/rotate with the
+                camera. Its own overflow:hidden is a second clipping boundary
+                so no zoomed/panned content can escape the scene bounds. */}
+            <div
+              data-camera
+              className="camera-layer absolute inset-0 overflow-hidden"
+              style={{ willChange: "transform, filter" }}
+            >
+              {/* Soft atmospheric blurred background fill (parallax far layer) */}
+              <img
+                data-backdrop
+                src={scene.src}
+                alt=""
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover will-change-transform"
+                style={{
+                  filter: "blur(54px) brightness(0.68) saturate(0.9)",
+                  transform: "scale(1.25)",
+                }}
+              />
 
-            {/* Foreground crisp artwork (parallax near layer, no card framing) */}
-            <img
-              data-art
-              src={scene.src}
-              alt={scene.label}
-              decoding="async"
-              className="relative z-10 h-full w-full object-contain will-change-transform"
-              style={{
-                filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.28))",
-              }}
-            />
+              {/* Foreground crisp artwork (parallax near layer — no card framing) */}
+              <img
+                data-art
+                src={scene.src}
+                alt={scene.label}
+                decoding="async"
+                className="absolute inset-0 z-10 h-full w-full object-contain will-change-transform"
+                style={{
+                  filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.28))",
+                }}
+              />
+            </div>
 
-            {/* Soft bottom fade for legibility (kept light, art stays dominant) */}
+            {/* Soft bottom fade for legibility (kept light, art stays dominant).
+                Sibling of the camera layer — never transformed. */}
             <div
               className="pointer-events-none absolute inset-0"
               style={{
-                background: "linear-gradient(to top, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.05) 16%, transparent 34%)",
+                background: "linear-gradient(to top, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.04) 16%, transparent 34%)",
               }}
             />
 
@@ -582,7 +694,8 @@ export default function JourneyScroll() {
               }}
             />
 
-            {/* Editorial label overlay */}
+            {/* Editorial label overlay — direct sibling of the camera layer,
+                so it stays fixed in place no matter how the camera zooms/pans. */}
             <div
               data-label
               className="absolute bottom-[8vh] left-[clamp(1.5rem,5vw,4.5rem)] pointer-events-none z-20"
@@ -604,17 +717,23 @@ export default function JourneyScroll() {
           </div>
         ))}
 
-        {/* ── Progress indicator (bottom right) ── */}
-        <div className="absolute bottom-6 right-8 z-30 pointer-events-none flex items-center gap-3 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-          <span data-counter className="font-mono text-[11px] font-bold tracking-[0.15em] text-white/60">
-            01 / 12
-          </span>
-          <div className="h-[2px] w-20 overflow-hidden rounded-full bg-white/15">
-            <div
-              data-progress
-              className="h-full w-full origin-left bg-pulse-500"
-              style={{ transform: "scaleX(0)" }}
-            />
+        {/* ── Epilogue closing caption — the journey lands at the system ── */}
+        <div
+          data-fin
+          className="absolute bottom-[18vh] left-[clamp(1.5rem,5vw,4.5rem)] pointer-events-none z-20"
+          style={{ opacity: 0, willChange: "opacity, transform" }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] font-bold tracking-[0.3em] text-white/40">
+              THE SYSTEM BEHIND EVERY JOURNEY
+            </span>
+            <span className="h-px w-6 bg-white/25" />
+          </div>
+          <div className="mt-1 font-display text-2xl font-bold uppercase tracking-[0.08em] text-white md:text-3xl">
+            One journey, one system.
+          </div>
+          <div className="mt-1 max-w-sm text-xs text-white/60 md:text-sm font-medium">
+            From the first notice to brighter days — a single connected EventPulse.
           </div>
         </div>
       </div>
