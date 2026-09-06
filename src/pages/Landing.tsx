@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, CalendarDays, CheckCircle2, Clock,
   Leaf, LockKeyhole, MapPin, Play, Radar, RefreshCw, ShieldAlert, ShieldCheck,
-  Sparkles, TrendingUp, Users, Zap,
+  Sparkles, TrendingUp, Users, X, Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { EVENTS } from "@/data/mock";
 import { useStore } from "@/store";
@@ -73,6 +73,36 @@ function Counter({ to, suffix = "", decimals = 0 }: { to: number; suffix?: strin
 export default function Landing() {
   const navigate = useNavigate();
   const { setEvent } = useStore();
+
+  /* ── "Watch how it works" cinematic video modal ── */
+  const [showVideo, setShowVideo] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const openVideo = () => setShowVideo(true);
+  const closeVideo = () => setShowVideo(false);
+
+  /* Lock page scroll while open (restored on close/unmount) and close on Escape.
+     The page's scroll position is never touched, so closing restores it exactly. */
+  useEffect(() => {
+    if (!showVideo) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowVideo(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [showVideo]);
+
+  /* Reinforce autoplay once the panel is mounted (opening followed a user click) */
+  useEffect(() => {
+    if (!showVideo) return;
+    const t = window.setTimeout(() => videoRef.current?.play().catch(() => {}), 40);
+    return () => window.clearTimeout(t);
+  }, [showVideo]);
 
   const goEvent = (id: string) => {
     const ev = EVENTS.find((e) => e.id === id);
@@ -335,10 +365,10 @@ export default function Landing() {
 
               {/* Right Watch How It Works floating capsule */}
               <div className="flex items-center gap-3 rounded-full bg-[#171918]/70 px-4 py-2 backdrop-blur-md border border-white/15 text-white shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-all hover:bg-[#171918]/85 hover:scale-[1.02]">
-                <button className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#23877D] text-white shadow-md transition-transform active:scale-95" aria-label="Watch how it works">
+                <button type="button" onClick={openVideo} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#23877D] text-white shadow-md transition-transform active:scale-95" aria-label="Watch how it works">
                   <Play className="h-3.5 w-3.5 ml-0.5 fill-current" />
                 </button>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/90 leading-tight">
+                <span onClick={openVideo} className="text-[10px] font-bold uppercase tracking-wider text-white/90 leading-tight select-none">
                   WATCH<br />HOW IT WORKS
                 </span>
               </div>
@@ -637,6 +667,50 @@ export default function Landing() {
       </section>
 
       <Footer />
+
+      {/* ── Cinematic "Watch how it works" video modal ── */}
+      <AnimatePresence>
+        {showVideo && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm sm:p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={closeVideo}
+            role="dialog"
+            aria-modal="true"
+            aria-label="EventPulse — how it works"
+          >
+            <motion.div
+              className="relative w-full max-w-5xl overflow-hidden rounded-2xl bg-black shadow-[0_24px_90px_rgba(0,0,0,0.6)] ring-1 ring-white/10"
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <video
+                ref={videoRef}
+                src="/videos/eventpulse-how-it-works.mp4"
+                controls
+                autoPlay
+                playsInline
+                preload="auto"
+                className="block aspect-video w-full"
+              />
+              <button
+                type="button"
+                onClick={closeVideo}
+                aria-label="Close video"
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/25 transition-colors hover:bg-black/80"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
